@@ -66,6 +66,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-utils</artifactId>
+                <version>3.6.1</version>
+            </dependency>
+            <dependency>
                 <groupId>org.tinywind</groupId>
                 <artifactId>spring-i18n-converter</artifactId>
                 <version>${project.version}</version>
