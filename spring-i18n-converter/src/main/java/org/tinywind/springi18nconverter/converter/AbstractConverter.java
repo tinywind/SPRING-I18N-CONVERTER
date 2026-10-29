@@ -23,7 +23,7 @@
  */
 package org.tinywind.springi18nconverter.converter;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.BufferedReader;
 import java.io.File;

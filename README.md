@@ -1,4 +1,6 @@
 # SPRING-I18N-CONVERTER
+
+Requires Java 17 or newer.
 Spring's message_?(\[a-zA-Z_\]+)?.properties convert to JS file
 
 * message.properties & default.js
