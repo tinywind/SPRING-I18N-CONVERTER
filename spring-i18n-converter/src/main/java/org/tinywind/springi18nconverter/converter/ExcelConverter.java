@@ -23,13 +23,10 @@
  */
 package org.tinywind.springi18nconverter.converter;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.poifs.filesystem.OfficeXmlFileException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -80,20 +77,9 @@ public class ExcelConverter extends AbstractConverter {
                 .count() == 0)
             return;
 
-        try {
+        try (Workbook workbook = WorkbookFactory.create(sourceFile)) {
             final Map<String, List<String>> stringListMap = new HashMap<>();
-            final FileInputStream file = new FileInputStream(sourceFile);
-            Iterator<Row> rowIterator;
-            try {
-                final XSSFWorkbook workbook = new XSSFWorkbook(file);
-                final XSSFSheet sheet = workbook.getSheetAt(0);
-                rowIterator = sheet.iterator();
-            } catch (OfficeXmlFileException e) {
-                System.err.println(" exception:" + e.getMessage());
-                final HSSFWorkbook workbook = new HSSFWorkbook(file);
-                final HSSFSheet sheet = workbook.getSheetAt(0);
-                rowIterator = sheet.iterator();
-            }
+            final Iterator<Row> rowIterator = workbook.getSheetAt(0).iterator();
 
             while (rowIterator.hasNext()) {
                 final Row row = rowIterator.next();

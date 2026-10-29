@@ -10,7 +10,7 @@
 
     <jaxb:globalBindings>
         <xjc:serializable uid="380"/>
-        <xjc:javaType name="java.lang.String" xmlType="xs:string" adapter="org.jooq.util.jaxb.tools.StringAdapter"/>
+        <xjc:javaType name="java.lang.String" xmlType="xs:string" adapter="org.tinywind.springi18nconverter.StringAdapter"/>
     </jaxb:globalBindings>
 
     <jaxb:bindings schemaLocation="../xsd/spring-i18n-converter-0.1.xsd" multiple="true" node="//xs:complexType">
