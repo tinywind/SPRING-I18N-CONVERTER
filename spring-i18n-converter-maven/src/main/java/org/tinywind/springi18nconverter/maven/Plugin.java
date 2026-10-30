@@ -32,7 +32,7 @@ import org.tinywind.springi18nconverter.Launcher;
 import org.tinywind.springi18nconverter.jaxb.Configuration;
 import org.tinywind.springi18nconverter.jaxb.Source;
 
-import javax.xml.bind.JAXB;
+import jakarta.xml.bind.JAXB;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
@@ -66,22 +66,17 @@ public class Plugin extends AbstractMojo {
             return;
         }
 
-        final Configuration configuration = new Configuration();
-        configuration.setSources(sources);
-
-        final StringWriter writer = new StringWriter();
-        JAXB.marshal(configuration, writer);
-
-        getLog().debug("Using this configuration:\n" + writer.toString());
-
         try {
+            final Configuration configuration = new Configuration();
+            configuration.setSources(sources);
+
+            final StringWriter writer = new StringWriter();
+            JAXB.marshal(configuration, writer);
+            getLog().debug("Using this configuration:\n" + writer.toString());
+
             Launcher.generate(configuration);
-        } catch (IOException e) {
-            e.printStackTrace();
-            getLog().error(e.getMessage());
-            if (e.getCause() != null)
-                getLog().error("  Cause: " + e.getCause().getMessage());
-            return;
+        } catch (IOException | RuntimeException e) {
+            throw new MojoExecutionException("Failed to convert Spring message bundles", e);
         }
 
         getLog().info("Complete SPRING-I18N-CONVERTER");

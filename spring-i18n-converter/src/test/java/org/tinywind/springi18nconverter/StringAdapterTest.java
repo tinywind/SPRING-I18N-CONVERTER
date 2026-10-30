@@ -1,13 +1,13 @@
 package org.tinywind.springi18nconverter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.tinywind.springi18nconverter.jaxb.Configuration;
 
-import javax.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBContext;
 import java.io.StringReader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class StringAdapterTest {
     @Test

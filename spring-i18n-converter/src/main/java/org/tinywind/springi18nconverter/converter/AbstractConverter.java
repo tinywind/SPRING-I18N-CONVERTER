@@ -57,10 +57,19 @@ public abstract class AbstractConverter {
 
     public abstract void decode(File sourceFile, String targetDir, String targetEncoding, Boolean describeByNative);
 
+    /**
+     * Decodes a source with the configured text encoding and overwrite policy.
+     * Existing converters may keep implementing the original decode method.
+     */
+    public void decode(File sourceFile, String sourceEncoding, String targetDir, String targetEncoding,
+                       Boolean describeByNative, boolean overwrite) {
+        decode(sourceFile, targetDir, targetEncoding, describeByNative);
+    }
+
     protected void addProperty(List<String> stringList, String key, String value, Boolean describeByNative) {
         String inserted = key + "=";
         int last = 0;
-        for (Matcher matcher = Pattern.compile(describeByNative ? "([\\\\]*\\n)" : "([\\\\]*\\\\n)").matcher(value); matcher.find(); inserted = "") {
+        for (Matcher matcher = Pattern.compile(describeByNative ? "([\\\\]*\\n)" : "([\\\\]*\\\\n)").matcher(value); matcher.find(); ) {
             if (!describeByNative && matcher.group().length() % 2 == 1)
                 continue;
 
@@ -68,6 +77,7 @@ public abstract class AbstractConverter {
             final String subValue = value.substring(last, end - (describeByNative ? 1 : 2));
             inserted += (describeByNative ? StringEscapeUtils.escapeJava(subValue) : subValue) + "\\";
             stringList.add(inserted);
+            inserted = "";
             last = end;
         }
 

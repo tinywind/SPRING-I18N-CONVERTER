@@ -31,7 +31,6 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
@@ -69,8 +68,13 @@ public class ExcelConverter extends AbstractConverter {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void decode(File sourceFile, String targetDir, String targetEncoding, Boolean describeByNative) {
+        decode(sourceFile, "UTF-8", targetDir, targetEncoding, describeByNative, true);
+    }
+
+    @Override
+    public void decode(File sourceFile, String sourceEncoding, String targetDir, String targetEncoding,
+                       Boolean describeByNative, boolean overwrite) {
         final String sourceFileName = sourceFile.getName().toLowerCase();
         if (Arrays.stream(JS_POSTFIX_ARRAY)
                 .filter(postfix -> sourceFileName.lastIndexOf(postfix) == sourceFileName.length() - postfix.length())
@@ -106,13 +110,14 @@ public class ExcelConverter extends AbstractConverter {
             }
 
             for (String language : stringListMap.keySet()) {
-                Files.write(Paths.get(new File(targetDir, messagesPropertiesFileName(language)).toURI()),
-                        stringListMap.get(language), Charset.forName(targetEncoding),
+                final File targetFile = new File(targetDir, messagesPropertiesFileName(language));
+                if (!overwrite && targetFile.exists())
+                    continue;
+                Files.write(targetFile.toPath(), stringListMap.get(language), Charset.forName(targetEncoding),
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
             }
-        } catch (Exception e) {
-            System.err.println(" FAIL to convert: " + sourceFile.getAbsolutePath());
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot convert: " + sourceFile.getAbsolutePath(), e);
         }
     }
 }

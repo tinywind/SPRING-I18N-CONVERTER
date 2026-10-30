@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.tinywind</groupId>
         <artifactId>spring-i18n-converter-parent</artifactId>
-        <version>0.1.1</version>
+        <version>7.0.10</version>
     </parent>
 
     <artifactId>spring-i18n-converter-maven</artifactId>
@@ -56,21 +56,21 @@
             <artifactId>spring-i18n-converter</artifactId>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>2.2.1</version>
+            <version>${maven.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
-            <artifactId>maven-project</artifactId>
-            <version>2.2.1</version>
-            <type>jar</type>
+            <artifactId>maven-core</artifactId>
+            <version>${maven.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>

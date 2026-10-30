@@ -1,6 +1,6 @@
 package org.tinywind.springi18nconverter;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
