@@ -1,94 +1,139 @@
 # SPRING-I18N-CONVERTER
 
-Requires Java 17 or newer.
-Spring's message_?(\[a-zA-Z_\]+)?.properties convert to JS file
+Convert Spring message bundles between `.properties`, JavaScript, and Excel using Maven or Gradle.
 
-* message.properties & default.js
-![capture](https://raw.githubusercontent.com/tinywind/SPRING-I18N-CONVERTER/master/capture1.png "comment")
-* message_ko_KR.properties & ko_KR.js 
-![capture](https://raw.githubusercontent.com/tinywind/SPRING-I18N-CONVERTER/master/capture2.png "comment")
-* message_ko_KR.properties & ko_KR.xlsx 
-![capture](https://raw.githubusercontent.com/tinywind/SPRING-I18N-CONVERTER/master/capture3.png "comment")
+Version `7.0.10` follows Spring Framework `7.0.10` and is tested with its `ReloadableResourceBundleMessageSource`. Spring is a test dependency; the converter does not require Spring at runtime. Java 17 or newer is required.
 
-# Features
-* **messages.properties** to **{locale}.js** : refer https://github.com/tinywind/SPRING-I18N-CONVERTER/tree/master/apply-converted-js
-* **{locale}.js** to **messages.properties**
-* **messages.properties** to **{locale}.xlsx** 
-* **{locale}.xlsx** to **messages.properties** 
+Supported conversions:
 
-# configure maven
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.tinywind</groupId>
-                <artifactId>spring-i18n-converter-maven</artifactId>
-                <version>0.1.1</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <sources>
-                        <source>
-                            <converter>org.tinywind.springi18nconverter.converter.JavascriptConverter</converter>
-                            <toMessageProperties>false</toMessageProperties>
-                            <sourceDir>${project.basedir}/src/main/resources/i18n</sourceDir>
-                            <targetDir>${project.basedir}/src/main/webapp/!resources/js/i18n</targetDir>
-                            <targetEncoding>UTF-8</targetEncoding>
-                            <describeByNative>true</describeByNative>
-                            <overwrite>true</overwrite>
-                        </source>
-                        <source>
-                            <converter>org.tinywind.springi18nconverter.converter.ExcelConverter</converter>
-                            <toMessageProperties>false</toMessageProperties>
-                            <sourceDir>${project.basedir}/src/main/resources/i18n</sourceDir>
-                            <targetDir>${project.basedir}/doc</targetDir>
-                            <targetEncoding>UTF-8</targetEncoding>
-                            <describeByNative>true</describeByNative>
-                            <overwrite>true</overwrite>
-                        </source>
-                    </sources>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+- `messages.properties` and `messages_<locale>.properties` to `default.js` and `<locale>.js`
+- JavaScript locale files back to message bundles
+- Message bundles to Excel `.xlsx` files
+- Excel `.xlsx` or legacy `.xls` files back to message bundles
 
-# result
-    "C:\Program Files\Java\jdk1.8.0_73\bin\java" "-Dmaven.home=C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2016.1.1\plugins\maven\lib\maven3" "-Dclassworlds.conf=C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2016.1.1\plugins\maven\lib\maven3\bin\m2.conf" -Didea.launcher.port=7540 "-Didea.launcher.bin.path=C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2016.1.1\bin" -Dfile.encoding=UTF-8 -classpath "C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2016.1.1\plugins\maven\lib\maven3\boot\plexus-classworlds-2.4.jar;C:\Program Files (x86)\JetBrains\IntelliJ IDEA 2016.1.1\lib\idea_rt.jar" com.intellij.rt.execution.application.AppMain org.codehaus.classworlds.Launcher -Didea.version=2016.1.3 org.tinywind:spring-i18n-converter-maven:0.1.1:generate -P local
-    [INFO] Scanning for projects...
-    [WARNING] 
-    [WARNING] Some problems were encountered while building the effective model for iruseum:tenbillion:war:0.0.1-SNAPSHOT
-    [WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.apache.tomcat.embed:tomcat-embed-jasper:jar -> duplicate declaration of version ${org.apache.tomcat.version} @ line 100, column 21
-    [WARNING] 
-    [WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
-    [WARNING] 
-    [WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
-    [WARNING] 
-    [INFO]                                                                         
-    [INFO] ------------------------------------------------------------------------
-    [INFO] Building Iruseum Tenbillion Webapp 0.0.1-SNAPSHOT
-    [INFO] ------------------------------------------------------------------------
-    [INFO] 
-    [INFO] --- spring-i18n-converter-maven:0.1.1:generate (default-cli) @ tenbillion ---
-       converted: C:\Users\tinywind\IdeaProjects\guidemon\src\main\resources\i18n\messages.properties -> C:\Users\tinywind\IdeaProjects\guidemon\src\main\webapp\!resources\js\i18n\default.js
-       converted: C:\Users\tinywind\IdeaProjects\guidemon\src\main\resources\i18n\messages_ko.properties -> C:\Users\tinywind\IdeaProjects\guidemon\src\main\webapp\!resources\js\i18n\ko.js
-       converted: C:\Users\tinywind\IdeaProjects\guidemon\src\main\resources\i18n\messages.properties -> C:\Users\tinywind\IdeaProjects\guidemon\doc\default.xlsx
-       converted: C:\Users\tinywind\IdeaProjects\guidemon\src\main\resources\i18n\messages_ko.properties -> C:\Users\tinywind\IdeaProjects\guidemon\doc\ko.xlsx
-    [INFO] Complete SPRING-I18N-CONVERTER
-    [INFO] ------------------------------------------------------------------------
-    [INFO] BUILD SUCCESS
-    [INFO] ------------------------------------------------------------------------
-    [INFO] Total time: 0.834s
-    [INFO] Finished at: Tue Jun 28 02:43:18 KST 2016
-    [INFO] Final Memory: 8M/245M
-    [INFO] ------------------------------------------------------------------------
-    
-    Process finished with exit code 0
+The JavaScript integration example is in [apply-converted-js](apply-converted-js).
 
+## Maven
 
-# LICENSE
-**The MIT License (MIT)**
+The core and Maven plugin are published on Maven Central:
+
+- `org.tinywind:spring-i18n-converter:7.0.10`
+- `org.tinywind:spring-i18n-converter-maven:7.0.10`
+
+Add the plugin to your `pom.xml`:
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.tinywind</groupId>
+            <artifactId>spring-i18n-converter-maven</artifactId>
+            <version>7.0.10</version>
+            <executions>
+                <execution>
+                    <phase>generate-resources</phase>
+                    <goals>
+                        <goal>generate</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <sources>
+                    <source>
+                        <converter>org.tinywind.springi18nconverter.converter.JavascriptConverter</converter>
+                        <sourceDir>${project.basedir}/src/main/resources/i18n</sourceDir>
+                        <targetDir>${project.basedir}/target/i18n/js</targetDir>
+                        <describeByNative>true</describeByNative>
+                    </source>
+                </sources>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+Run `mvn generate-resources`, or invoke the goal directly:
+
+```sh
+mvn org.tinywind:spring-i18n-converter-maven:7.0.10:generate
+```
+
+Set `<skip>true</skip>` in the plugin configuration to skip conversion.
+
+## Gradle
+
+The Gradle plugin is published on the [Gradle Plugin Portal](https://plugins.gradle.org/plugin/org.tinywind.spring-i18n-converter). Apply it in `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("org.tinywind.spring-i18n-converter") version "7.0.10"
+}
+
+springI18n {
+    configurationFile.set(layout.projectDirectory.file("configuration.xml"))
+}
+```
+
+The default configuration file is `configuration.xml` in the project directory. The plugin reuses the converter's XML schema and resolves relative source and target directories against the Gradle project directory.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="https://raw.githubusercontent.com/tinywind/SPRING-I18N-CONVERTER/master/spring-i18n-converter/src/main/resources/xsd/spring-i18n-converter-0.1.xsd">
+    <sources>
+        <source>
+            <converter>org.tinywind.springi18nconverter.converter.JavascriptConverter</converter>
+            <sourceDir>src/main/resources/i18n</sourceDir>
+            <targetDir>build/i18n/js</targetDir>
+            <describeByNative>true</describeByNative>
+        </source>
+    </sources>
+</configuration>
+```
+
+Run the task:
+
+```sh
+./gradlew convertI18n
+```
+
+Set `springI18n.skip.set(true)` to skip conversion. The task runs when requested and does not declare incremental outputs because configuration files may select arbitrary source and target directories.
+
+## Conversion options
+
+Each `<source>` supports the following fields in Maven configuration or the standalone XML file:
+
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `converter` | `org.tinywind.springi18nconverter.converter.JavascriptConverter` | Use `JavascriptConverter` or `ExcelConverter` in that package. |
+| `sourceDir` | Required | Directory containing the input files. |
+| `targetDir` | Empty | Output directory; an empty value uses the working directory (the project directory for Gradle). |
+| `toMessageProperties` | `false` | Set `true` to convert JavaScript or Excel back to `.properties`. |
+| `sourceEncoding` | `UTF-8` | Text input encoding. |
+| `targetEncoding` | `UTF-8` | Text output encoding. |
+| `overwrite` | `true` | Set `false` to preserve existing output files. Missing outputs are still created. |
+| `describeByNative` | `false` | Preserve native Unicode characters in text output instead of Unicode escapes. |
+| `excludes` | Empty | Reserved configuration field; currently unused. |
+
+To export Excel, use `org.tinywind.springi18nconverter.converter.ExcelConverter` and a separate `targetDir`. To import JavaScript or Excel, set `toMessageProperties` to `true` and point `sourceDir` at the exported files. Conversion failures fail the Maven goal or Gradle task.
+
+## Build and test
+
+The Maven reactor builds the core and Maven plugin. Use Maven 3.10.0 or newer:
+
+```sh
+mvn clean verify
+```
+
+The Gradle wrapper builds and tests the Gradle adapter. The core version must already be available on Maven Central, or supplied through an initialization script for a local candidate:
+
+```sh
+./gradlew --project-cache-dir .tmp/gradle-project-cache :spring-i18n-converter-gradle:check :spring-i18n-converter-gradle:assemble
+```
+
+Tests cover both conversion directions, Unicode and escaping, XML validation, overwrite behavior, plugin failure propagation, and Spring Framework message loading. CI installs the current core into an isolated Maven repository before running Gradle TestKit against it.
+
+The Maven `release` profile attaches source and Javadoc archives, signs artifacts with GPG, and publishes through the Maven Central Portal. Gradle publication uses `:spring-i18n-converter-gradle:publishPlugins` and Gradle Portal publishing credentials. Credentials belong in environment variables or local credential storage.
+
+## License
+
+[MIT](LICENSE)

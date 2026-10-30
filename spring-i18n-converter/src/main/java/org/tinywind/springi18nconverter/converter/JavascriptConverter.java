@@ -24,7 +24,7 @@
 package org.tinywind.springi18nconverter.converter;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
+import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import javax.script.ScriptException;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -53,7 +53,11 @@ public class JavascriptConverter extends AbstractConverter {
         while ((line = reader.readLine()) != null) {
             final StringKeyValue keyValue = addOutput(line, reader, describeByNative, false);
             if (keyValue == null) continue;
-            output.add("i18n['" + languageName + "']['" + keyValue.getKey() + "']='" + keyValue.getValue().replaceAll("[']", "\\\\'") + "';");
+            final String value = describeByNative
+                    ? keyValue.getValue().replace("\\", "\\\\").replace("'", "\\'")
+                            .replace("\r", "\\r").replace("\n", "\\n")
+                    : keyValue.getValue().replaceAll("[']", "\\\\'");
+            output.add("i18n['" + languageName + "']['" + keyValue.getKey() + "']='" + value + "';");
         }
 
         Files.write(Paths.get(targetFile.toURI()), output, Charset.forName(targetFileEncoding),
@@ -66,29 +70,39 @@ public class JavascriptConverter extends AbstractConverter {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void decode(File sourceFile, String targetDir, String targetEncoding, Boolean describeByNative) {
+        decode(sourceFile, "UTF-8", targetDir, targetEncoding, describeByNative, true);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void decode(File sourceFile, String sourceEncoding, String targetDir, String targetEncoding,
+                       Boolean describeByNative, boolean overwrite) {
         final String sourceFileName = sourceFile.getName().toLowerCase();
         if (sourceFileName.lastIndexOf(JS_POSTFIX) != sourceFileName.length() - JS_POSTFIX.length())
             return;
 
-        final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
-        try {
-            engine.eval(new FileReader(sourceFile));
+        final ScriptEngine engine = new NashornScriptEngineFactory().getScriptEngine();
+        try (Reader reader = Files.newBufferedReader(sourceFile.toPath(), Charset.forName(sourceEncoding))) {
+            engine.eval(reader);
             final Map<String, Map<String, String>> i18n = (Map<String, Map<String, String>>) engine.eval("i18n");
 
             for (String language : i18n.keySet()) {
+                final File targetFile = new File(targetDir, messagesPropertiesFileName(language));
+                if (!overwrite && targetFile.exists())
+                    continue;
+
                 final List<String> output = new ArrayList<>();
                 i18n.get(language).forEach((key, value) -> {
-                    addProperty(output, key, value, describeByNative);
+                    addProperty(output, key, describeByNative ? value : value.replace("\\", "\\\\"), describeByNative);
                 });
-                Files.write(Paths.get(new File(targetDir, messagesPropertiesFileName(language)).toURI()),
-                        output, Charset.forName(targetEncoding),
+                Files.write(targetFile.toPath(), output, Charset.forName(targetEncoding),
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
             }
-        } catch (ScriptException | IOException e) {
-            System.err.println(" FAIL to convert: " + sourceFile.getAbsolutePath());
-            e.printStackTrace();
+        } catch (ScriptException e) {
+            throw new IllegalArgumentException("Cannot decode JavaScript: " + sourceFile.getAbsolutePath(), e);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot convert: " + sourceFile.getAbsolutePath(), e);
         }
     }
 }

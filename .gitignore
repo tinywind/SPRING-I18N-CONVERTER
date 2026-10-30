@@ -14,3 +14,7 @@ hs_err_pid*
 .idea
 *.iml
 target
+.tmp/
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar

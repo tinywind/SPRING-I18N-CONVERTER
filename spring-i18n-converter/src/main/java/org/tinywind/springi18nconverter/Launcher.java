@@ -28,11 +28,13 @@ import org.tinywind.springi18nconverter.jaxb.Configuration;
 import org.tinywind.springi18nconverter.jaxb.Source;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.ValidationEvent;
+import jakarta.xml.bind.annotation.XmlElement;
 import javax.xml.validation.SchemaFactory;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
@@ -50,12 +52,12 @@ public class Launcher {
     public final static String MESSAGES_FILE_FORMAT = "messages_?([a-zA-Z_]+)?[.]properties";
 
     private static boolean isCorrected(Configuration configuration) {
-        if (configuration.getSources() == null || configuration.getSources().size() == 0) {
+        if (configuration == null || configuration.getSources() == null || configuration.getSources().size() == 0) {
             System.err.println("  not found source!");
             return false;
         }
         for (Source source : configuration.getSources()) {
-            if (source.getSourceDir() == null) {
+            if (source.getSourceDir() == null || source.getSourceDir().trim().isEmpty()) {
                 System.err.println("  not found sourceDir!");
                 return false;
             }
@@ -66,21 +68,21 @@ public class Launcher {
     private static void setDefault(Configuration configuration) throws NoSuchFieldException {
         for (Source source : configuration.getSources()) {
             if (source.getConverter() == null)
-                source.setConverter(Source.class.getField("converter").getAnnotation(XmlElement.class).defaultValue());
+                source.setConverter(Source.class.getDeclaredField("converter").getAnnotation(XmlElement.class).defaultValue());
             if (source.getSourceEncoding() == null)
-                source.setSourceEncoding(Source.class.getField("sourceEncoding").getAnnotation(XmlElement.class).defaultValue());
+                source.setSourceEncoding(Source.class.getDeclaredField("sourceEncoding").getAnnotation(XmlElement.class).defaultValue());
             if (source.getTargetDir() == null)
-                source.setTargetDir(Source.class.getField("targetDir").getAnnotation(XmlElement.class).defaultValue());
+                source.setTargetDir(Source.class.getDeclaredField("targetDir").getAnnotation(XmlElement.class).defaultValue());
             if (source.getTargetEncoding() == null)
-                source.setTargetEncoding(Source.class.getField("targetEncoding").getAnnotation(XmlElement.class).defaultValue());
+                source.setTargetEncoding(Source.class.getDeclaredField("targetEncoding").getAnnotation(XmlElement.class).defaultValue());
             if (source.getExcludes() == null)
-                source.setExcludes(Source.class.getField("excludes").getAnnotation(XmlElement.class).defaultValue());
+                source.setExcludes(Source.class.getDeclaredField("excludes").getAnnotation(XmlElement.class).defaultValue());
             if (source.isOverwrite() == null)
-                source.setOverwrite(Boolean.valueOf(Source.class.getField("overwrite").getAnnotation(XmlElement.class).defaultValue()));
+                source.setOverwrite(Boolean.valueOf(Source.class.getDeclaredField("overwrite").getAnnotation(XmlElement.class).defaultValue()));
             if (source.isDescribeByNative() == null)
-                source.setDescribeByNative(Boolean.valueOf(Source.class.getField("describeByNative").getAnnotation(XmlElement.class).defaultValue()));
+                source.setDescribeByNative(Boolean.valueOf(Source.class.getDeclaredField("describeByNative").getAnnotation(XmlElement.class).defaultValue()));
             if (source.isToMessageProperties() == null)
-                source.setToMessageProperties(Boolean.valueOf(Source.class.getField("toMessageProperties").getAnnotation(XmlElement.class).defaultValue()));
+                source.setToMessageProperties(Boolean.valueOf(Source.class.getDeclaredField("toMessageProperties").getAnnotation(XmlElement.class).defaultValue()));
         }
     }
 
@@ -127,13 +129,20 @@ public class Launcher {
         System.out.println("COMPLETE CONVERT");
     }
 
-    private static Configuration load(InputStream in) throws IOException {
+    /**
+     * Loads and validates a converter configuration without closing its input.
+     *
+     * @param in the XML configuration stream
+     * @return the validated configuration
+     * @throws IOException if the configuration cannot be read or validated
+     */
+    public static Configuration load(InputStream in) throws IOException {
         final byte[] buffer = new byte[1000 * 1000];
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (int len; (len = in.read(buffer)) >= 0; )
             out.write(buffer, 0, len);
 
-        final String xml = out.toString()
+        final String xml = out.toString(StandardCharsets.UTF_8)
                 .replaceAll("<(\\w+:)?configuration\\s+xmlns(:\\w+)?=\"[^\"]*\"[^>]*>", "<$1configuration xmlns$2=\"" + REPO_CONVERTER_XSD + "\">")
                 .replace("<configuration>", "<configuration xmlns=\"" + REPO_CONVERTER_XSD + "\">");
         try {
@@ -147,36 +156,40 @@ public class Launcher {
             final JAXBContext ctx = JAXBContext.newInstance(Configuration.class);
             final Unmarshaller unmarshaller = ctx.createUnmarshaller();
             unmarshaller.setSchema(sf.newSchema(Launcher.class.getResource("/xsd/" + CONVERTER_XSD)));
-            unmarshaller.setEventHandler(event -> true);
+            unmarshaller.setEventHandler(event -> event.getSeverity() == ValidationEvent.WARNING);
             return (Configuration) unmarshaller.unmarshal(new StringReader(xml));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException("Cannot read configuration XML", e);
         }
     }
 
     public static void generate(Configuration configuration) throws IOException {
         if (!isCorrected(configuration)) {
-            System.err.println("Incorrect configuration xml");
-            return;
+            throw new IllegalArgumentException("Incorrect configuration XML");
         }
 
         try {
             setDefault(configuration);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-            return;
+            throw new IllegalStateException("Cannot apply configuration defaults", e);
         }
 
-        configuration.getSources().forEach(source -> new Launcher().generate(new File(source.getSourceDir()), "", source));
+        try {
+            for (Source source : configuration.getSources()) {
+                new Launcher().generate(new File(source.getSourceDir()), "", source);
+            }
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
     }
 
-    private void generate(File sourceDir, String subDir, Source source) {
+    private void generate(File sourceDir, String subDir, Source source) throws IOException {
         if (!sourceDir.exists())
             sourceDir = new File(sourceDir.getAbsolutePath());
 
         final File[] childFiles = sourceDir.listFiles();
         if (childFiles == null)
-            return;
+            throw new IOException("Cannot read source directory: " + sourceDir.getAbsolutePath());
 
         final String dir = source.getTargetDir();
         final File targetDir = new File(new File(dir
@@ -184,24 +197,20 @@ public class Launcher {
                 + subDir).getAbsolutePath());
 
         if (!targetDir.mkdirs() && !targetDir.isDirectory()) {
-            System.err.println(targetDir.getAbsolutePath() + " is not directory.");
-            return;
+            throw new IOException(targetDir.getAbsolutePath() + " is not a directory.");
         }
 
         AbstractConverter converter;
         try {
             converter = (AbstractConverter) Class.forName(source.getConverter().trim()).getConstructor(new Class[]{}).newInstance();
         } catch (Exception e) {
-            e.printStackTrace();
-            return;
+            throw new IllegalArgumentException("Cannot instantiate converter: " + source.getConverter(), e);
         }
 
         for (File file : childFiles) {
-            if (file.exists() && !source.isOverwrite())
-                continue;
-
             if (source.isToMessageProperties()) {
-                converter.decode(file, source.getTargetDir(), source.getTargetEncoding(), source.isDescribeByNative());
+                converter.decode(file, source.getSourceEncoding(), source.getTargetDir(), source.getTargetEncoding(),
+                        source.isDescribeByNative(), source.isOverwrite());
             } else {
                 final String fileName = file.getName();
 
@@ -218,13 +227,9 @@ public class Launcher {
                     if (!source.isOverwrite() || targetFile.isDirectory())
                         continue;
 
-                try {
-                    final String originCode = new String(Files.readAllBytes(Paths.get(file.toURI())), source.getSourceEncoding());
-                    converter.encode(originCode, fileSubName, targetFile, source.getTargetEncoding(), source.isDescribeByNative());
-                    System.out.println("   converted: " + file.getAbsolutePath() + " -> " + targetFile.getAbsolutePath());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                final String originCode = new String(Files.readAllBytes(Paths.get(file.toURI())), source.getSourceEncoding());
+                converter.encode(originCode, fileSubName, targetFile, source.getTargetEncoding(), source.isDescribeByNative());
+                System.out.println("   converted: " + file.getAbsolutePath() + " -> " + targetFile.getAbsolutePath());
             }
         }
     }
