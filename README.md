@@ -1,6 +1,6 @@
 # SPRING-I18N-CONVERTER
 
-Convert Spring message bundles between `.properties`, JavaScript, and Excel using Maven or Gradle.
+Convert Spring `.properties` message bundles to and from JavaScript and Excel with Maven or Gradle.
 
 Version `7.0.10` follows Spring Framework `7.0.10` and is tested with its `ReloadableResourceBundleMessageSource`. Spring is a test dependency; the converter does not require Spring at runtime. Java 17 or newer is required.
 
